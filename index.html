@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Binary Bots</title>
+  <link rel="icon" href="favicon.ico">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.2.7-rc.0/web3.min.js"></script>
+  <script src="cryptozombies_abi.js"></script>
+  <style>
+    /* ── Reset & Base ── */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0d0d1a;
+      color: #e0e0ff;
+      min-height: 100vh;
+    }
+
+    /* ── Top Bar ── */
+    #topBar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #12122a;
+      border-bottom: 1px solid #2a2a5a;
+      padding: 12px 24px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    #topBar h1 {
+      font-size: 1.3rem;
+      color: #a78bfa;
+      letter-spacing: 1px;
+      white-space: nowrap;
+    }
+
+    #connectionStatus {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+    }
+
+    #walletDot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #f87171;
+      flex-shrink: 0;
+    }
+
+    #walletDot.connected {
+      background: #34d399;
+    }
+
+    #walletStatus {
+      color: #94a3b8;
+    }
+
+    #walletAddress {
+      color: #64748b;
+      font-family: monospace;
+      font-size: 0.78rem;
+    }
+
+    #topActions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .top-btn {
+      padding: 8px 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.88rem;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    .top-btn:hover {
+      opacity: 0.85;
+      transform: translateY(-1px);
+    }
+
+    .top-btn:active {
+      transform: translateY(0);
+    }
+
+    #createZombieBtn {
+      background: #7c3aed;
+      color: #fff;
+    }
+
+    #fuseZombieBtn {
+      background: #0f766e;
+      color: #fff;
+    }
+
+    /* ── Status Bar ── */
+    #txStatus {
+      min-height: 34px;
+      padding: 7px 20px;
+      background: #1a1a2e;
+      border-bottom: 1px solid #2a2a5a;
+      font-size: 0.88rem;
+      color: #fbbf24;
+      text-align: center;
+    }
+
+    /* ── Grid ── */
+    #zombieGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 20px;
+      padding: 24px;
+    }
+
+    #emptyState {
+      grid-column: 1/-1;
+      text-align: center;
+      padding: 70px 20px;
+      color: #3a3a6a;
+    }
+
+    #emptyState h2 {
+      font-size: 1.6rem;
+      margin-bottom: 8px;
+    }
+
+    #emptyState p {
+      font-size: 0.9rem;
+    }
+
+    /* ── Zombie Card ── */
+    .zombie-card {
+      background: #1a1a3a;
+      border: 1px solid #2a2a5a;
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .zombie-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 28px rgba(124, 58, 237, 0.35);
+    }
+
+    .zombie-avatar {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      background: #0a0a20;
+      display: block;
+    }
+
+    .zombie-body {
+      padding: 12px 12px 8px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .zombie-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #c4b5fd;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .zombie-dna {
+      font-family: monospace;
+      font-size: 0.68rem;
+      color: #475569;
+      letter-spacing: 0.5px;
+    }
+
+    .zombie-stats {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .stat-badge {
+      background: #252550;
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 0.72rem;
+      color: #a78bfa;
+      font-weight: 700;
+    }
+
+    .zombie-status {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 6px;
+      text-align: center;
+    }
+
+    .zombie-status.ready {
+      background: #052e16;
+      color: #34d399;
+    }
+
+    .zombie-status.cooldown {
+      background: #3b1104;
+      color: #fb923c;
+    }
+
+    /* ── Card Action Buttons ── */
+    .zombie-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      padding: 10px;
+      border-top: 1px solid #2a2a5a;
+    }
+
+    .action-btn {
+      padding: 7px 4px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    .action-btn:hover:not(:disabled) {
+      opacity: 0.82;
+      transform: translateY(-1px);
+    }
+
+    .action-btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .action-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .btn-levelup {
+      background: #1d4ed8;
+      color: #fff;
+    }
+
+    .btn-battle {
+      background: #b91c1c;
+      color: #fff;
+    }
+
+    .btn-gift {
+      background: #15803d;
+      color: #fff;
+    }
+
+    .btn-mutate {
+      background: #92400e;
+      color: #fff;
+    }
+
+    /* ── Mutate Inline Panel ── */
+    .mutate-panel {
+      padding: 10px;
+      border-top: 1px solid #2a2a5a;
+      background: #0f0f28;
+    }
+
+    .mutate-counter {
+      font-size: 0.7rem;
+      color: #64748b;
+      text-align: right;
+      margin-bottom: 5px;
+    }
+
+    .mutate-counter .cnt {
+      color: #a78bfa;
+      font-weight: 700;
+    }
+
+    .mutate-input {
+      width: 100%;
+      background: #0a0a20;
+      border: 2px solid #2a2a5a;
+      border-radius: 8px;
+      color: #e0e0ff;
+      font-family: monospace;
+      font-size: 0.95rem;
+      padding: 8px 10px;
+      letter-spacing: 3px;
+      outline: none;
+      transition: border-color 0.2s, color 0.2s;
+      text-align: center;
+    }
+
+    .mutate-input:focus {
+      border-color: #7c3aed;
+    }
+
+    .mutate-input.complete {
+      border-color: #34d399;
+      color: #34d399;
+    }
+
+    .mutate-hint {
+      font-size: 0.67rem;
+      color: #475569;
+      margin: 5px 0 8px;
+      text-align: center;
+      font-style: italic;
+    }
+
+    .mutate-btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .mutate-cancel-btn {
+      padding: 7px 4px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 700;
+      background: #374151;
+      color: #fff;
+      transition: opacity 0.2s;
+    }
+
+    .mutate-confirm-btn {
+      padding: 7px 4px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.71rem;
+      font-weight: 700;
+      background: #78350f;
+      color: #fed7aa;
+      transition: opacity 0.2s;
+    }
+
+    .mutate-cancel-btn:hover,
+    .mutate-confirm-btn:hover {
+      opacity: 0.82;
+    }
+
+    /* ── Modals ── */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.72);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.open {
+      display: flex;
+    }
+
+    .modal-box {
+      background: #1a1a3a;
+      border: 1px solid #3a3a7a;
+      border-radius: 16px;
+      padding: 28px;
+      width: 380px;
+      max-width: 92vw;
+    }
+
+    .modal-box h2 {
+      font-size: 1.15rem;
+      color: #a78bfa;
+      margin-bottom: 18px;
+    }
+
+    .modal-label {
+      font-size: 0.78rem;
+      color: #94a3b8;
+      margin-bottom: 5px;
+      display: block;
+    }
+
+    .modal-hint {
+      font-size: 0.78rem;
+      color: #64748b;
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+
+    .modal-box input,
+    .modal-box select {
+      width: 100%;
+      background: #0d0d2a;
+      border: 1px solid #3a3a7a;
+      border-radius: 8px;
+      color: #e0e0ff;
+      padding: 10px 12px;
+      font-size: 0.88rem;
+      margin-bottom: 8px;
+      outline: none;
+    }
+
+    .modal-box input:focus,
+    .modal-box select:focus {
+      border-color: #7c3aed;
+    }
+
+    .modal-box select option {
+      background: #1a1a3a;
+    }
+
+    .modal-error {
+      font-size: 0.8rem;
+      color: #f87171;
+      margin-bottom: 10px;
+      display: none;
+    }
+
+    .modal-fee {
+      font-size: 0.8rem;
+      color: #34d399;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+
+    .modal-btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .modal-confirm {
+      flex: 1;
+      padding: 10px;
+      background: #7c3aed;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.9rem;
+      transition: opacity 0.2s;
+    }
+
+    .modal-confirm:hover {
+      opacity: 0.85;
+    }
+
+    .modal-cancel {
+      flex: 1;
+      padding: 10px;
+      background: #374151;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.9rem;
+      transition: opacity 0.2s;
+    }
+
+    .modal-cancel:hover {
+      opacity: 0.85;
+    }
+
+    #marketplaceBtn {
+      background: #b45309;
+      color: #fff;
+    }
+
+    #marketplaceBtn.active {
+      background: #1d4ed8;
+    }
+
+    .listed-badge {
+      grid-column: 1/-1;
+      background: #1a3a1a;
+      border: 1px solid #34d399;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      color: #34d399;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .btn-unlist {
+      background: #7f1d1d;
+      color: #fca5a5;
+      grid-column: 1/-1;
+    }
+
+    .btn-sell {
+      background: #b45309;
+      color: #fed7aa;
+      grid-column: 1/-1;
+    }
+
+    .btn-buy {
+      background: #065f46;
+      color: #6ee7b7;
+      grid-column: 1/-1;
+      font-size: 0.82rem;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ── Top Bar ── -->
+  <div id="topBar">
+    <h1>⚔️ Binary Bots</h1>
+    <div id="connectionStatus">
+      <div id="walletDot"></div>
+      <span id="walletStatus">Not connected</span>
+      <span id="walletAddress"></span>
+    </div>
+    <div id="topActions">
+      <button class="top-btn" id="createZombieBtn">+ Create Zombie</button>
+      <button class="top-btn" id="fuseZombieBtn">⚗️ Fuse</button>
+      <button class="top-btn" id="marketplaceBtn">🛒 Marketplace</button>
+    </div>
+  </div>
+
+  <!-- ── Transaction Status ── -->
+  <div id="txStatus"></div>
+
+  <!-- ── Main Grid ── -->
+  <div id="zombieGrid">
+    <div id="emptyState">
+      <h2>No Zombies Yet</h2>
+      <p>Connect your wallet and create your first zombie!</p>
+    </div>
+  </div>
+
+  <!-- ── Marketplace Section ── -->
+  <div id="marketplaceSection" style="display:none;">
+    <div style="padding: 16px 24px 0; display:flex; align-items:center; gap:12px;">
+      <h2 style="color:#a78bfa; font-size:1.1rem;">🛒 Zombie Marketplace</h2>
+      <span id="marketplaceSubtitle" style="color:#475569; font-size:0.82rem;"></span>
+    </div>
+    <div id="marketplaceGrid"
+      style="display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:20px; padding:16px 24px 24px;">
+    </div>
+  </div>
+
+  <!-- ── Modal: Create Zombie ── -->
+  <div class="modal" id="createModal">
+    <div class="modal-box">
+      <h2>🧟 Create New Zombie</h2>
+      <label class="modal-label" for="newZombieName">Zombie Name</label>
+      <input type="text" id="newZombieName" placeholder="Enter a name..." maxlength="32" autocomplete="off">
+      <div class="modal-btn-row">
+        <button class="modal-cancel" id="cancelCreate">Cancel</button>
+        <button class="modal-confirm" id="confirmCreate">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Fuse — Step 1: Select Zombies ── -->
+  <div class="modal" id="fuseModal">
+    <div class="modal-box">
+      <h2>⚗️ Fuse Two Zombies</h2>
+      <label class="modal-label" for="fuseSelect1">First Zombie</label>
+      <select id="fuseSelect1"></select>
+      <label class="modal-label" for="fuseSelect2">Second Zombie</label>
+      <select id="fuseSelect2"></select>
+      <div class="modal-btn-row">
+        <button class="modal-cancel" id="cancelFuse">Cancel</button>
+        <button class="modal-confirm" id="confirmFuse">Next →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Fuse — Step 2: Name the New Zombie ── -->
+  <div class="modal" id="fuseNameModal">
+    <div class="modal-box">
+      <h2>⚗️ Name Your Fused Zombie</h2>
+      <p class="modal-hint">The two source zombies will be destroyed and a new one will be born.</p>
+      <p class="modal-fee" id="fuseNameFee"></p>
+      <label class="modal-label" for="fuseNameInput">New Zombie Name</label>
+      <input type="text" id="fuseNameInput" placeholder="Enter a name..." maxlength="32" autocomplete="off">
+      <div class="modal-btn-row">
+        <button class="modal-cancel" id="cancelFuseName">Cancel</button>
+        <button class="modal-confirm" id="confirmFuseName">Fuse &amp; Pay</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Gift — Step 1: Enter Address ── -->
+  <div class="modal" id="giftModal">
+    <div class="modal-box">
+      <h2>🎁 Gift Zombie</h2>
+      <p class="modal-hint" id="giftModalHint">Enter the recipient's wallet address.</p>
+      <label class="modal-label" for="giftAddressInput">Recipient Address</label>
+      <input type="text" id="giftAddressInput" placeholder="0x..." autocomplete="off">
+      <p class="modal-error" id="giftStep1Error"></p>
+      <div class="modal-btn-row">
+        <button class="modal-cancel" id="cancelGift1">Cancel</button>
+        <button class="modal-confirm" id="confirmGift1">Next →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Gift — Step 2: Re-confirm Address ── -->
+  <div class="modal" id="giftConfirmModal">
+    <div class="modal-box">
+      <h2>🔐 Confirm Gift</h2>
+      <p class="modal-hint" id="giftConfirmHint">Re-enter the address to confirm. This action is irreversible.</p>
+      <label class="modal-label" for="giftConfirmInput">Re-enter Recipient Address</label>
+      <input type="text" id="giftConfirmInput" placeholder="0x..." autocomplete="off">
+      <p class="modal-error" id="giftStep2Error"></p>
+      <div class="modal-btn-row">
+        <button class="modal-cancel" id="cancelGift2">Cancel</button>
+        <button class="modal-confirm" id="confirmGift2">Confirm &amp; Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Sell Zombie ── -->
+  <div class="modal" id="sellModal">
+    <div class="modal-box">
+      <h2>💰 List Zombie for Sale</h2>
+      <div style="display:flex; gap:12px; align-items:center; margin-bottom:16px;">
+        <img id="sellPreviewAvatar"
+          style="width:80px;height:80px;border-radius:10px;object-fit:cover;background:#0a0a20;" src="" alt="">
+        <div>
+          <div id="sellPreviewName" style="font-weight:700;color:#c4b5fd;font-size:0.95rem;"></div>
+          <div id="sellPreviewDna" style="font-family:monospace;font-size:0.65rem;color:#475569;margin:3px 0;"></div>
+          <div id="sellPreviewLevel" style="font-size:0.75rem;color:#a78bfa;font-weight:700;"></div>
+        </div>
+      </div>
+      <label class="modal-label" for="sellPriceInput">Asking Price (ETH)</label>
+      <input type="number" id="sellPriceInput" placeholder="e.g. 0.05" min="0.0001" step="0.001" autocomplete="off">
+      <p class="modal-error" id="sellError"></p>
+      <div class="modal-btn-row">
+        <button class="modal-cancel" id="cancelSell">Cancel</button>
+        <button class="modal-confirm" id="confirmSell">List for Sale</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+
+    var cryptoZombies;
+    var userAccount;
+    var allZombieData = [];
+    var countdownTimer = null;
+    var pendingFuseId1 = null;
+    var pendingFuseId2 = null;
+    var pendingGiftZombieId = null;
+    var pendingGiftAddress = null;
+    var pendingSellZombieId = null;
+    var marketplaceActive = false;
+    var _armySig = "";
+    var _marketSig = "";
+    var _autoRefreshTimer = null;
+
+    function startApp() {
+      var cryptoZombiesAddress = "0xF3569Cdb3c80c46445B9dbC1694b4a7d96CBd11C";
+      cryptoZombies = new web3.eth.Contract(cryptoZombiesABI, cryptoZombiesAddress);
+    }
+
+    function startCountdownTick() {
+      if (countdownTimer) clearInterval(countdownTimer);
+      countdownTimer = setInterval(function () {
+        var nowSec = Math.floor(Date.now() / 1000);
+        $(".zombie-status").each(function () {
+          var readyTime = parseInt($(this).data("ready-time"));
+          var battleBtn = $(this).closest(".zombie-card").find(".btn-battle");
+          if (nowSec >= readyTime) {
+            $(this).text("Ready to battle!").removeClass("cooldown").addClass("ready");
+            battleBtn.prop("disabled", false);
+          } else {
+            var secsLeft = readyTime - nowSec;
+            var mins = Math.floor(secsLeft / 60);
+            var secs = secsLeft % 60;
+            $(this).text("Cooldown: " + mins + "m " + (secs < 10 ? "0" : "") + secs + "s")
+              .removeClass("ready").addClass("cooldown");
+            battleBtn.prop("disabled", true);
+          }
+        });
+      }, 1000);
+    }
+
+    function displayZombies(ids) {
+      $("#zombieGrid").empty();
+      allZombieData = [];
+
+      if (ids.length === 0) {
+        $("#zombieGrid").html('<div id="emptyState"><h2>No Zombies Yet</h2><p>Create your first zombie to get started!</p></div>');
+        return;
+      }
+
+      var promises = ids.map(function (id) {
+        return Promise.all([
+          getZombieDetails(id),
+          cryptoZombies.methods.zombiePrice(id).call()
+        ]).then(function (res) { return { id: id, zombie: res[0], price: res[1] }; });
+      });
+
+      Promise.all(promises).then(function (results) {
+        results.forEach(function (item) {
+          var id = item.id;
+          var z = item.zombie;
+          var priceWei = item.price;
+          var isListed = priceWei !== "0" && priceWei !== 0;
+
+          allZombieData.push({ id: id, name: z.name, level: parseInt(z.level), dna: z.dna });
+
+          var nowSec = Math.floor(Date.now() / 1000);
+          var readyTime = parseInt(z.readyTime);
+          var onCooldown = nowSec < readyTime;
+          var zombieLevel = parseInt(z.level);
+          var avatarUrl = "https://robohash.org/" + z.dna + "?set=set2&size=200x200";
+
+          var actionsHtml;
+          if (isListed) {
+            var priceEth = parseFloat(web3.utils.fromWei(priceWei, "ether")).toFixed(4);
+            actionsHtml =
+              '<div class="zombie-actions">' +
+              '<div class="listed-badge">Listed for ' + priceEth + ' ETH</div>' +
+              '<button class="action-btn btn-unlist" onclick="unlistZombie(' + id + ')">Unlist</button>' +
+              '</div>';
+          } else {
+            var mutateEnabled = zombieLevel >= 5;
+            var mutateDisabled = mutateEnabled ? '' : 'disabled title="Unlocks at Level 5"';
+            var mutateClick = mutateEnabled ? 'onclick="toggleMutatePanel(' + id + ')"' : '';
+            var mutateTxt = mutateEnabled ? 'Mutate' : 'Mutate (Lvl 5)';
+            actionsHtml =
+              '<div class="zombie-actions">' +
+              '<button class="action-btn btn-levelup" onclick="levelUp(' + id + ')">Level Up</button>' +
+              '<button class="action-btn btn-battle" onclick="battleZombie(' + id + ')" ' + (onCooldown ? 'disabled' : '') + '>Battle</button>' +
+              '<button class="action-btn btn-gift" onclick="giftZombie(' + id + ')">Gift</button>' +
+              '<button class="action-btn btn-mutate" ' + mutateClick + ' ' + mutateDisabled + '>' + mutateTxt + '</button>' +
+              '<button class="action-btn btn-sell" onclick="sellZombie(' + id + ')">Sell</button>' +
+              '</div>';
+          }
+
+          var statusHtml = isListed ? '' :
+            '<div class="zombie-status ' + (onCooldown ? 'cooldown' : 'ready') + '" data-ready-time="' + readyTime + '">' +
+            (onCooldown ? 'Cooldown...' : 'Ready to battle!') + '</div>';
+
+          $("#zombieGrid").append(
+            '<div class="zombie-card">' +
+            '<img class="zombie-avatar" src="' + avatarUrl + '" alt="' + z.name + '" loading="lazy">' +
+            '<div class="zombie-body">' +
+            '<div class="zombie-name" title="' + z.name + '">' + z.name + '</div>' +
+            '<div class="zombie-dna">' + z.dna + '</div>' +
+            '<div class="zombie-stats">' +
+            '<span class="stat-badge">Lvl ' + z.level + '</span>' +
+            '<span class="stat-badge">W: ' + z.winCount + '</span>' +
+            '<span class="stat-badge">L: ' + z.lossCount + '</span>' +
+            '</div>' +
+            statusHtml +
+            '</div>' +
+            actionsHtml +
+            (isListed ? '' :
+              '<div class="mutate-panel" id="mutatePanel-' + id + '" style="display:none;">' +
+              '<div class="mutate-counter"><span class="cnt" id="mutateCount-' + id + '">0</span>/16 digits</div>' +
+              '<input type="text" class="mutate-input" id="mutateInput-' + id + '" maxlength="16"' +
+              ' placeholder="0000000000000000"' +
+              ' oninput="onMutateDnaInput(this,' + id + ',\'' + z.dna + '\')"' +
+              ' data-original-dna="' + z.dna + '">' +
+              '<div class="mutate-hint">Avatar updates live as you type — confirm only when ready</div>' +
+              '<div class="mutate-btn-row">' +
+              '<button class="mutate-cancel-btn" onclick="cancelMutate(' + id + ',\'' + z.dna + '\')">Cancel</button>' +
+              '<button class="mutate-confirm-btn" onclick="confirmMutate(' + id + ')">Confirm (0.01 ETH)</button>' +
+              '</div>' +
+              '</div>'
+            ) +
+            '</div>'
+          );
+        });
+
+        _armySig = results.map(function (r) { return String(r.id) + ":" + String(r.price); }).sort().join("|");
+        startCountdownTick();
+      });
+    }
+
+    function toggleMutatePanel(id) {
+      document.querySelectorAll('.mutate-panel').forEach(function (p) {
+        if (p.id !== 'mutatePanel-' + id && p.style.display !== 'none') {
+          var otherId = p.id.replace('mutatePanel-', '');
+          var inp = document.getElementById('mutateInput-' + otherId);
+          if (inp) {
+            var orig = inp.getAttribute('data-original-dna');
+            var avatar = p.closest('.zombie-card').querySelector('.zombie-avatar');
+            if (avatar && orig) avatar.src = 'https://robohash.org/' + orig + '?set=set2&size=200x200';
+            inp.value = '';
+            inp.classList.remove('complete');
+            var cnt = document.getElementById('mutateCount-' + otherId);
+            if (cnt) cnt.textContent = '0';
+          }
+          p.style.display = 'none';
+        }
+      });
+
+      var panel = document.getElementById('mutatePanel-' + id);
+      if (panel) panel.style.display = (panel.style.display === 'none' || panel.style.display === '') ? 'block' : 'none';
+    }
+
+    function onMutateDnaInput(input, id, originalDna) {
+      var typed = input.value.replace(/\D/g, '').slice(0, 16);
+      input.value = typed;
+
+      var cnt = document.getElementById('mutateCount-' + id);
+      if (cnt) cnt.textContent = typed.length;
+
+      typed.length === 16 ? input.classList.add('complete') : input.classList.remove('complete');
+
+      var origStr = String(originalDna).padStart(16, '0');
+      var previewDna = typed + origStr.slice(typed.length);
+
+      var panel = document.getElementById('mutatePanel-' + id);
+      if (panel) {
+        var avatar = panel.closest('.zombie-card').querySelector('.zombie-avatar');
+        if (avatar) avatar.src = 'https://robohash.org/' + previewDna + '?set=set2&size=200x200';
+      }
+    }
+
+    function cancelMutate(id, originalDna) {
+      var inp = document.getElementById('mutateInput-' + id);
+      if (inp) { inp.value = ''; inp.classList.remove('complete'); }
+      var cnt = document.getElementById('mutateCount-' + id);
+      if (cnt) cnt.textContent = '0';
+
+      var panel = document.getElementById('mutatePanel-' + id);
+      if (panel) {
+        var avatar = panel.closest('.zombie-card').querySelector('.zombie-avatar');
+        if (avatar) avatar.src = 'https://robohash.org/' + originalDna + '?set=set2&size=200x200';
+        panel.style.display = 'none';
+      }
+    }
+
+    function confirmMutate(id) {
+      var inp = document.getElementById('mutateInput-' + id);
+      if (!inp) return;
+      var newDna = inp.value;
+      if (newDna.length !== 16) {
+        $("#txStatus").text("Enter all 16 digits before confirming the mutation.");
+        return;
+      }
+      var mzData = allZombieData.find(function (z) { return String(z.id) === String(id); });
+      var mzName = mzData ? mzData.name : ("Zombie #" + id);
+      $("#txStatus").text("Mutating " + mzName + "… charging 0.01 ETH…");
+      cryptoZombies.methods.changeDna(id, newDna)
+        .send({ from: userAccount, value: web3.utils.toWei("0.01", "ether") })
+        .on("receipt", function () {
+          $("#txStatus").text("Mutation complete! " + mzName + " has a new look!");
+          getZombiesByOwner(userAccount).then(displayZombies);
+        })
+        .on("error", function (error) {
+          $("#txStatus").text("Mutation failed: " + error.message);
+        });
+    }
+
+    function createRandomZombie(name) {
+      $("#txStatus").text("Creating new zombie on the blockchain. This may take a while…");
+      return cryptoZombies.methods.createRandomZombie(name)
+        .send({ from: userAccount })
+        .on("receipt", function () {
+          $("#txStatus").text("New zombie created!");
+          getZombiesByOwner(userAccount).then(displayZombies);
+        })
+        .on("error", function (error) { $("#txStatus").text("Error: " + error.message); });
+    }
+
+    function levelUp(zombieId) {
+      var lvlData = allZombieData.find(function (z) { return String(z.id) === String(zombieId); });
+      var lvlName = lvlData ? lvlData.name : ("Zombie #" + zombieId);
+      $("#txStatus").text("Leveling up " + lvlName + "…");
+      return cryptoZombies.methods.levelUp(zombieId)
+        .send({ from: userAccount, value: web3.utils.toWei("0.001", "ether") })
+        .on("receipt", function () {
+          $("#txStatus").text("Power overwhelming! " + lvlName + " leveled up!");
+          getZombiesByOwner(userAccount).then(displayZombies);
+        })
+        .on("error", function (error) { $("#txStatus").text("Level-up failed: " + error.message); });
+    }
+
+    function battleZombie(zombieId) {
+      var zData = allZombieData.find(function (z) { return String(z.id) === String(zombieId); });
+      var zName = zData ? zData.name : ("Zombie #" + zombieId);
+      $("#txStatus").text(zName + " is entering the Arena…");
+      cryptoZombies.methods.battleWildZombie(zombieId)
+        .send({ from: userAccount })
+        .on("receipt", function (receipt) {
+          console.log("Transaction Receipt:", receipt);
+          var victory;
+          if (receipt.events && receipt.events.BattleOutcome) {
+            victory = receipt.events.BattleOutcome.returnValues.victory;
+          } else if (receipt.logs && receipt.logs.length > 0) {
+            console.log("Raw logs:", receipt.logs);
+          }
+          if (victory === true || victory === "true") {
+            $("#txStatus").text("Victory! " + zName + " won the battle!");
+          } else if (victory === false || victory === "false") {
+            $("#txStatus").text("Defeat! " + zName + " lost. Rest for 1 minute.");
+          } else {
+            $("#txStatus").text("Battle complete! Check your stats below.");
+          }
+          getZombiesByOwner(userAccount).then(displayZombies);
+        })
+        .on("error", function (error) {
+          $("#txStatus").text("Battle failed — is " + zName + " still on cooldown?");
+          console.error(error);
+        });
+    }
+
+    function giftZombie(zombieId) {
+      pendingGiftZombieId = zombieId;
+      var gftData = allZombieData.find(function (z) { return String(z.id) === String(zombieId); });
+      var gftName = gftData ? gftData.name : ("Zombie #" + zombieId);
+      $("#giftModalHint").text("Enter the recipient's wallet address for " + gftName + ".");
+      $("#giftAddressInput").val("");
+      $("#giftStep1Error").hide().text("");
+      openModal("giftModal");
+      setTimeout(function () { $("#giftAddressInput").focus(); }, 50);
+    }
+
+    function executeFuse(id1, id2, name) {
+      var z1 = allZombieData.find(function (z) { return String(z.id) === String(id1); });
+      var z2 = allZombieData.find(function (z) { return String(z.id) === String(id2); });
+      if (!z1 || !z2) { $("#txStatus").text("Zombie data not found — refresh and try again."); return; }
+
+      var totalLvl = z1.level + z2.level;
+      var feeEthDisp = (totalLvl * 0.001).toFixed(3);
+      var feeWei = web3.utils.toBN(web3.utils.toWei("0.001", "ether")).muln(totalLvl).toString();
+
+      $("#txStatus").text("Fusing into \"" + name + "\"… charging " + feeEthDisp + " ETH…");
+      cryptoZombies.methods.fuseZombies(id1, id2, name)
+        .send({ from: userAccount, value: feeWei })
+        .on("receipt", function () {
+          $("#txStatus").text("Fusion complete! \"" + name + "\" has been born!");
+          getZombiesByOwner(userAccount).then(displayZombies);
+        })
+        .on("error", function (error) {
+          $("#txStatus").text("Fusion failed: " + error.message);
+        });
+    }
+
+    function sellZombie(id) {
+      pendingSellZombieId = id;
+      var z = allZombieData.find(function (d) { return String(d.id) === String(id); });
+      if (z) {
+        $("#sellPreviewName").text(z.name);
+        $("#sellPreviewDna").text(z.dna);
+        $("#sellPreviewLevel").text("Level " + z.level);
+        $("#sellPreviewAvatar").attr("src", "https://robohash.org/" + z.dna + "?set=set2&size=200x200");
+      }
+      $("#sellPriceInput").val("");
+      $("#sellError").hide().text("");
+      openModal("sellModal");
+      setTimeout(function () { $("#sellPriceInput").focus(); }, 50);
+    }
+
+    function unlistZombie(id) {
+      $("#txStatus").text("Unlisting zombie…");
+      cryptoZombies.methods.delistZombie(id)
+        .send({ from: userAccount })
+        .on("receipt", function () {
+          $("#txStatus").text("Zombie unlisted successfully.");
+          getZombiesByOwner(userAccount).then(displayZombies);
+        })
+        .on("error", function (error) { $("#txStatus").text("Unlist failed: " + error.message); });
+    }
+
+    function openMarketplace() {
+      marketplaceActive = true;
+      document.getElementById("zombieGrid").style.display = "none";
+      document.getElementById("marketplaceSection").style.display = "block";
+      $("#marketplaceBtn").addClass("active").text("← My Army");
+      $("#createZombieBtn, #fuseZombieBtn").hide();
+      $("#marketplaceGrid").html('<div style="text-align:center;padding:40px;color:#64748b;">Loading listings…</div>');
+      $("#marketplaceSubtitle").text("");
+
+      cryptoZombies.methods.getListedZombies().call().then(function (listedIds) {
+        if (listedIds.length === 0) {
+          $("#marketplaceGrid").html('<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#3a3a6a;"><h2 style="font-size:1.4rem;margin-bottom:8px;">No Listings</h2><p>No zombies are currently for sale.</p></div>');
+          return;
+        }
+        var promises = listedIds.map(function (id) {
+          return Promise.all([
+            getZombieDetails(id),
+            cryptoZombies.methods.zombiePrice(id).call(),
+            cryptoZombies.methods.zombieToOwner(id).call()
+          ]).then(function (res) { return { id: id, zombie: res[0], price: res[1], owner: res[2] }; });
+        });
+        Promise.all(promises).then(function (results) {
+          $("#marketplaceGrid").empty();
+          var visible = 0;
+          results.forEach(function (item) {
+            if (item.owner.toLowerCase() === userAccount.toLowerCase()) return;
+            visible++;
+            var priceEth = parseFloat(web3.utils.fromWei(item.price, "ether")).toFixed(4);
+            var avatarUrl = "https://robohash.org/" + item.zombie.dna + "?set=set2&size=200x200";
+            $("#marketplaceGrid").append(
+              '<div class="zombie-card">' +
+              '<img class="zombie-avatar" src="' + avatarUrl + '" loading="lazy">' +
+              '<div class="zombie-body">' +
+              '<div class="zombie-name">' + item.zombie.name + '</div>' +
+              '<div class="zombie-dna">' + item.zombie.dna + '</div>' +
+              '<div class="zombie-stats"><span class="stat-badge">Lvl ' + item.zombie.level + '</span></div>' +
+              '</div>' +
+              '<div class="zombie-actions">' +
+              '<button class="action-btn btn-buy" onclick="buyZombieFromMarket(' + item.id + ',\'' + item.price + '\')">Buy for ' + priceEth + ' ETH</button>' +
+              '</div>' +
+              '</div>'
+            );
+          });
+          _marketSig = results.map(function (r) { return String(r.id) + ":" + String(r.price); }).sort().join("|");
+          $("#marketplaceSubtitle").text(visible + " listing" + (visible !== 1 ? "s" : "") + " available");
+          if (visible === 0) {
+            $("#marketplaceGrid").html('<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#3a3a6a;"><h2 style="font-size:1.4rem;margin-bottom:8px;">Nothing to Buy</h2><p>All current listings belong to your wallet.</p></div>');
+          }
+        });
+      }).catch(function (e) {
+        $("#marketplaceGrid").html('<div style="text-align:center;padding:40px;color:#f87171;">Failed to load marketplace.</div>');
+      });
+    }
+
+    function showMyArmy() {
+      marketplaceActive = false;
+      document.getElementById("zombieGrid").style.display = "";
+      document.getElementById("marketplaceSection").style.display = "none";
+      $("#marketplaceBtn").removeClass("active").text("🛒 Marketplace");
+      $("#createZombieBtn, #fuseZombieBtn").show();
+      getZombiesByOwner(userAccount).then(displayZombies);
+    }
+
+    function buyZombieFromMarket(zombieId, priceWei) {
+      $("#txStatus").text("Purchasing zombie…");
+      cryptoZombies.methods.buyZombie(zombieId)
+        .send({ from: userAccount, value: priceWei })
+        .on("receipt", function () {
+          $("#txStatus").text("Purchase complete! The zombie is now yours!");
+          openMarketplace();
+        })
+        .on("error", function (error) { $("#txStatus").text("Purchase failed: " + error.message); });
+    }
+
+    function getZombieDetails(id) { return cryptoZombies.methods.zombies(id).call(); }
+    function zombieToOwner(id) { return cryptoZombies.methods.zombieToOwner(id).call(); }
+    function getZombiesByOwner(owner) { return cryptoZombies.methods.getZombiesByOwner(owner).call(); }
+
+    function openModal(id) { $("#" + id).addClass("open"); }
+    function closeModal(id) { $("#" + id).removeClass("open"); }
+
+    $("#createZombieBtn").on("click", function () {
+      $("#newZombieName").val("");
+      openModal("createModal");
+      setTimeout(function () { $("#newZombieName").focus(); }, 50);
+    });
+    $("#cancelCreate").on("click", function () { closeModal("createModal"); });
+    $("#confirmCreate").on("click", function () {
+      var name = $("#newZombieName").val().trim();
+      if (!name) { $("#newZombieName").focus(); return; }
+      closeModal("createModal");
+      createRandomZombie(name);
+    });
+    $("#newZombieName").on("keypress", function (e) { if (e.which === 13) $("#confirmCreate").click(); });
+
+    $("#fuseZombieBtn").on("click", function () {
+      if (allZombieData.length < 2) { $("#txStatus").text("You need at least 2 zombies to fuse!"); return; }
+      buildFuseDropdowns();
+      openModal("fuseModal");
+    });
+    $("#cancelFuse").on("click", function () { closeModal("fuseModal"); });
+    $("#confirmFuse").on("click", function () {
+      pendingFuseId1 = parseInt($("#fuseSelect1").val());
+      pendingFuseId2 = parseInt($("#fuseSelect2").val());
+      closeModal("fuseModal");
+
+      var z1 = allZombieData.find(function (z) { return String(z.id) === String(pendingFuseId1); });
+      var z2 = allZombieData.find(function (z) { return String(z.id) === String(pendingFuseId2); });
+      if (z1 && z2) {
+        var fee = ((z1.level + z2.level) * 0.001).toFixed(3);
+        $("#fuseNameFee").text("Cost: " + fee + " ETH  (Lvl " + z1.level + " + Lvl " + z2.level + ")");
+      }
+      $("#fuseNameInput").val("");
+      openModal("fuseNameModal");
+      setTimeout(function () { $("#fuseNameInput").focus(); }, 50);
+    });
+
+    $("#fuseSelect1").on("change", function () {
+      var excl = $(this).val();
+      var prev = $("#fuseSelect2").val();
+      $("#fuseSelect2").empty();
+      allZombieData.forEach(function (z) {
+        if (String(z.id) !== String(excl))
+          $("#fuseSelect2").append('<option value="' + z.id + '">' + z.name + ' (Lvl ' + z.level + ')</option>');
+      });
+      if (String(prev) !== String(excl)) $("#fuseSelect2").val(prev);
+    });
+    $("#fuseSelect2").on("change", function () {
+      var excl = $(this).val();
+      var prev = $("#fuseSelect1").val();
+      $("#fuseSelect1").empty();
+      allZombieData.forEach(function (z) {
+        if (String(z.id) !== String(excl))
+          $("#fuseSelect1").append('<option value="' + z.id + '">' + z.name + ' (Lvl ' + z.level + ')</option>');
+      });
+      if (String(prev) !== String(excl)) $("#fuseSelect1").val(prev);
+    });
+
+    function buildFuseDropdowns() {
+      var excl2 = String(allZombieData[1].id);
+      var excl1 = String(allZombieData[0].id);
+      $("#fuseSelect1").empty();
+      allZombieData.forEach(function (z) {
+        if (String(z.id) !== excl2)
+          $("#fuseSelect1").append('<option value="' + z.id + '">' + z.name + ' (Lvl ' + z.level + ')</option>');
+      });
+      $("#fuseSelect1").val(allZombieData[0].id);
+      $("#fuseSelect2").empty();
+      allZombieData.forEach(function (z) {
+        if (String(z.id) !== excl1)
+          $("#fuseSelect2").append('<option value="' + z.id + '">' + z.name + ' (Lvl ' + z.level + ')</option>');
+      });
+      $("#fuseSelect2").val(allZombieData[1].id);
+    }
+
+    $("#cancelFuseName").on("click", function () { closeModal("fuseNameModal"); });
+    $("#confirmFuseName").on("click", function () {
+      var name = $("#fuseNameInput").val().trim();
+      if (!name) { $("#fuseNameInput").focus(); return; }
+      closeModal("fuseNameModal");
+      executeFuse(pendingFuseId1, pendingFuseId2, name);
+    });
+    $("#fuseNameInput").on("keypress", function (e) { if (e.which === 13) $("#confirmFuseName").click(); });
+
+    $("#cancelGift1").on("click", function () { closeModal("giftModal"); });
+    $("#confirmGift1").on("click", function () {
+      var addr = $("#giftAddressInput").val().trim();
+      if (!addr) return;
+      if (!web3.utils.isAddress(addr)) {
+        $("#giftStep1Error").text("Invalid Ethereum address.").show();
+        return;
+      }
+      pendingGiftAddress = addr;
+      closeModal("giftModal");
+      var gftData2 = allZombieData.find(function (z) { return String(z.id) === String(pendingGiftZombieId); });
+      var gftName2 = gftData2 ? gftData2.name : ("Zombie #" + pendingGiftZombieId);
+      $("#giftConfirmHint").text(
+        "Re-enter the address to confirm gifting " + gftName2 + ". This cannot be undone."
+      );
+      $("#giftConfirmInput").val("");
+      $("#giftStep2Error").hide().text("");
+      openModal("giftConfirmModal");
+      setTimeout(function () { $("#giftConfirmInput").focus(); }, 50);
+    });
+    $("#giftAddressInput").on("keypress", function (e) { if (e.which === 13) $("#confirmGift1").click(); });
+
+    $("#cancelGift2").on("click", function () { closeModal("giftConfirmModal"); });
+    $("#confirmGift2").on("click", function () {
+      var addr2 = $("#giftConfirmInput").val().trim();
+      if (addr2 !== pendingGiftAddress) {
+        $("#giftStep2Error").text("Addresses don't match. Please re-enter carefully.").show();
+        return;
+      }
+      closeModal("giftConfirmModal");
+      var recipient = pendingGiftAddress;
+      var zombieId = pendingGiftZombieId;
+      var gftData3 = allZombieData.find(function (z) { return String(z.id) === String(zombieId); });
+      var gftName3 = gftData3 ? gftData3.name : ("Zombie #" + zombieId);
+      $("#txStatus").text("Gifting " + gftName3 + "…");
+      cryptoZombies.methods.transferFrom(userAccount, recipient, zombieId)
+        .send({ from: userAccount })
+        .on("receipt", function () {
+          var short = recipient.slice(0, 6) + "…" + recipient.slice(-4);
+          $("#txStatus").text(gftName3 + " gifted to " + short + "!");
+          getZombiesByOwner(userAccount).then(displayZombies);
+        })
+        .on("error", function (error) {
+          $("#txStatus").text("Gift failed: " + error.message);
+        });
+    });
+    $("#giftConfirmInput").on("keypress", function (e) { if (e.which === 13) $("#confirmGift2").click(); });
+
+    $("#cancelSell").on("click", function () { closeModal("sellModal"); });
+    $("#confirmSell").on("click", function () {
+      var priceEth = parseFloat($("#sellPriceInput").val());
+      if (!priceEth || priceEth <= 0) {
+        $("#sellError").text("Enter a valid price greater than 0.").show();
+        return;
+      }
+      var priceWei = web3.utils.toWei(String(priceEth), "ether");
+      closeModal("sellModal");
+      var z = allZombieData.find(function (d) { return String(d.id) === String(pendingSellZombieId); });
+      var zName = z ? z.name : ("Zombie #" + pendingSellZombieId);
+      $("#txStatus").text("Listing " + zName + " for " + priceEth + " ETH…");
+      cryptoZombies.methods.listForSale(pendingSellZombieId, priceWei)
+        .send({ from: userAccount })
+        .on("receipt", function () {
+          $("#txStatus").text(zName + " is now listed on the marketplace!");
+          getZombiesByOwner(userAccount).then(displayZombies);
+        })
+        .on("error", function (error) { $("#txStatus").text("Listing failed: " + error.message); });
+    });
+    $("#sellPriceInput").on("keypress", function (e) { if (e.which === 13) $("#confirmSell").click(); });
+
+    function startAutoRefresh() {
+      if (_autoRefreshTimer) clearInterval(_autoRefreshTimer);
+      _autoRefreshTimer = setInterval(function () {
+        if (!userAccount || !cryptoZombies) return;
+        if (marketplaceActive) {
+          cryptoZombies.methods.getListedZombies().call().then(function (ids) {
+            if (ids.length === 0) {
+              if (_marketSig !== "none") { _marketSig = "none"; openMarketplace(); }
+              return;
+            }
+            Promise.all(ids.map(function (id) {
+              return cryptoZombies.methods.zombiePrice(id).call()
+                .then(function (p) { return String(id) + ":" + String(p); });
+            })).then(function (parts) {
+              var sig = parts.sort().join("|");
+              if (sig !== _marketSig) openMarketplace();
+            });
+          }).catch(function () { });
+        } else {
+          cryptoZombies.methods.getZombiesByOwner(userAccount).call().then(function (ids) {
+            if (ids.length === 0) {
+              if (_armySig !== "") { _armySig = ""; displayZombies([]); }
+              return;
+            }
+            Promise.all(ids.map(function (id) {
+              return cryptoZombies.methods.zombiePrice(id).call()
+                .then(function (p) { return String(id) + ":" + String(p); });
+            })).then(function (parts) {
+              var sig = parts.sort().join("|");
+              var mutateOpen = document.querySelector('.mutate-panel[style*="block"]');
+              if (sig !== _armySig && !mutateOpen) getZombiesByOwner(userAccount).then(displayZombies);
+            });
+          }).catch(function () { });
+        }
+      }, 1000);
+    }
+
+    $("#marketplaceBtn").on("click", function () {
+      if (marketplaceActive) { showMyArmy(); } else { openMarketplace(); }
+    });
+
+    window.addEventListener('load', async () => {
+      if (window.ethereum) {
+        window.web3 = new Web3(ethereum);
+        try {
+          const accounts = await ethereum.enable();
+          userAccount = accounts[0];
+          startApp();
+          $("#walletDot").addClass("connected");
+          $("#walletStatus").text("Connected");
+          $("#walletAddress").text(userAccount.slice(0, 6) + "…" + userAccount.slice(-4));
+          getZombiesByOwner(userAccount).then(displayZombies);
+          startAutoRefresh();
+        } catch (error) {
+          $("#walletStatus").text("Connection denied");
+        }
+      } else if (window.web3) {
+        window.web3 = new Web3(web3.currentProvider);
+        userAccount = web3.eth.accounts[0];
+        startApp();
+        $("#walletDot").addClass("connected");
+        $("#walletStatus").text("Connected");
+        $("#walletAddress").text(userAccount.slice(0, 6) + "…" + userAccount.slice(-4));
+        getZombiesByOwner(userAccount).then(displayZombies);
+        startAutoRefresh();
+      } else {
+        $("#walletStatus").text("No wallet detected");
+        console.log("Non-Ethereum browser detected.");
+      }
+    });
+
+    ethereum.on('accountsChanged', () => { window.location.reload(); });
+    ethereum.on('chainChanged', () => { window.location.reload(); });
+
+  </script>
+</body>
+
+</html>
