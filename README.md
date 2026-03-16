@@ -12,6 +12,10 @@ A Web3 decentralized application built on top of the CryptoZombies tutorial smar
 
 [Binary Bots Demo Video](https://drive.google.com/file/d/1z4NTEP-Iqwb0rx8W8IeHwXSdYtahWxp8/view?usp=drive_link)
 
+## Github Link
+
+[Binary Bots Repo Link](https://github.com/Akshat1661/Binary-Bot)
+
 ---
 
 ## Features
