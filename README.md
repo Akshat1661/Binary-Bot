@@ -1,151 +1,411 @@
-# CryptoZombies DApp — CPSC 559 Midterm Project
+# CryptoArena — CPSC 559 Final Project
 
 ## Binary Bots
 ### Akshat Sureshbhai Desai (820501773)
 ### Jiya Prashant Desai (817816879)
 
-A Web3 decentralized application built on top of the CryptoZombies tutorial smart contract, extended with custom gameplay features and an on-chain NFT marketplace. Runs on a local Ganache blockchain with MetaMask for wallet integration.
+A full-stack Web3 decentralized application built from scratch with 10 original Solidity smart contracts, a React + Vite frontend, and MetaMask wallet integration. CryptoArena is a creature-battling NFT game where players mint, train, battle, trade, and compete with on-chain creatures — all governed by smart contracts on a local Hardhat blockchain (or Sepolia testnet for live demo).
+
+**Midterm Repo:** [https://github.com/Akshat1661/Binary-Bot](https://github.com/Akshat1661/Binary-Bot)
 
 ---
 
-## Demo Video
+## Table of Contents
 
-[Binary Bots Demo Video](https://drive.google.com/file/d/1z4NTEP-Iqwb0rx8W8IeHwXSdYtahWxp8/view?usp=drive_link)
+1. [Features](#features)
+2. [Smart Contracts](#smart-contracts)
+3. [Contract Architecture](#contract-architecture)
+4. [Tech Stack](#tech-stack)
+5. [Local Setup & Run Instructions](#local-setup--run-instructions)
+6. [Deploying to Vercel + Sepolia](#deploying-to-vercel--sepolia)
+7. [MetaMask Configuration](#metamask-configuration)
 
-## Github Link
-
-[Binary Bots Repo Link](https://github.com/Akshat1661/Binary-Bot)
-
-## Github Link
-
-[Binary Bots Repo Link](https://github.com/Akshat1661/Binary-Bot)
 ---
 
 ## Features
 
-### Starter Pack Features (from CryptoZombies tutorial)
+### Dashboard — My Army
+- **Mint a Creature** — Pay 10 ARENA tokens to mint a new creature NFT. DNA, element (Fire/Water/Earth/Air/Light/Dark), rarity (Common/Uncommon/Rare/Legendary), and stats (ATK/DEF/SPD/HP) are generated pseudo-randomly on-chain.
+- **Level Up** — Spend ARENA tokens to increase a creature's level (10 ARENA × current level). Higher levels improve stats.
+- **Breed Creatures** — Combine two creatures to produce an offspring that inherits averaged stats from both parents. Costs 20 ARENA per breed.
+- **Live Avatars** — Each creature renders a unique avatar via RoboHash, deterministically derived from its on-chain DNA. Rarity shown with color-coded borders.
 
-**1.1 Create Zombie**
-The base tutorial provided a `createRandomZombie` function that generates a zombie with a pseudo-random DNA from the zombie's name. Our change: the player now enters a custom name for their zombie through a modal input, giving each zombie a personal identity rather than a system-assigned one.
+### Battle Arena
+- **1v1 Battles** — Challenge any creature from any wallet. Winner is decided by a stat comparison with ±15% random variance using `block.prevrandao`.
+- **Challenge System** — Send, accept, decline, or cancel challenges. Challenged player sees incoming challenge requests in real time.
+- **Cooldown Timer** — After a battle, a 1-minute cooldown is enforced on-chain. Frontend shows a live countdown per creature.
+- **Reputation** — Winners earn +15 on-chain reputation points; losers earn +5 participation reputation. Reputation is stored in `ReputationSystem.sol`.
+- **ARENA Rewards** — Winners earn 10 ARENA tokens per battle win.
 
-**1.2 Level Up (0.001 ETH)**
-Pays 0.001 ETH to the contract to increment a zombie's level by 1. Higher levels unlock additional features like DNA mutation (Level 5+).
+### NFT Marketplace
+- **Fixed-Price Listings** — List any creature at a set ETH price. A 2.5% platform fee is deducted on every sale, routed to the Treasury.
+- **Auctions** — List a creature with a reserve price and duration (1 minute / 1 hour / 24 hours). Anyone can place bids. Winner takes the creature; reserve-unmet auctions refund the bidder.
+- **Batch Operations** — List multiple creatures at once (`batchListFixed`) or buy multiple fixed-price listings in one transaction (`batchBuy`).
+- **Royalties** — Creators earn 5% royalty on every secondary sale (ERC-2981).
+- **My Listings vs Others** — Tab view separates your active listings from the broader marketplace.
 
-**1.3 Show Zombie Army**
-The tutorial required manually pressing a button to refresh and display the zombie list. Our change: zombie data is fetched and rendered automatically on wallet connection and after every on-chain action (create, battle, buy, sell, gift, fuse, mutate). Additionally, a polling mechanism checks the blockchain every second and auto-refreshes the view if any state has changed — so both wallets stay in sync without a manual page reload.
+### Tournaments
+- **Create a Tournament** — Set ETH entry fee, max participants, and registration window.
+- **Join with a Creature** — Pay the ETH entry fee to register a creature in the tournament bracket.
+- **Round-by-Round Results** — Each round is advanced manually after a 60-second delay. Every match shows "Creature A vs Creature B → Creature A won" with the loser struck through.
+- **Prizes** — Winner earns 100% of the ETH prize pool plus 500 ARENA.
+- **Reputation & XP** — Tournament winner gains +20 reputation and 200 XP on-chain.
+
+### Game Items Shop
+- **XP Potion** — Instantly grants 100 XP to any of your creatures (cost: 10 ARENA).
+- **Breed Boost** — Grants 200 XP simulating an offspring bonus (cost: 25 ARENA).
+- **Battle Boost** — Grants 50 XP and records an extra win (cost: 15 ARENA).
+- Items are ERC-1155 tokens. Admins can mint items via `adminMint`.
+
+### Escrow Trades
+- **Peer-to-Peer Escrow** — Seller locks a creature NFT in escrow; buyer deposits ETH. Neither party can back out mid-trade.
+- **Confirm Delivery** — Buyer confirms they received the creature, releasing ETH to the seller.
+- **Auto-Release** — If buyer doesn't act within 48 hours, ETH auto-releases to seller.
+- **Dispute** — Buyer can raise a dispute before the deadline, triggering arbitration.
+- **Cancel** — The seller can cancel before the escrow is accepted.
+
+### Dispute Resolution
+- **Staked Arbitrators** — Any user can stake 100 ARENA to join the arbitrator pool. Minimum 3 needed for any dispute.
+- **Exclusion** — Buyer and seller are automatically excluded from their own dispute's arbitrator selection.
+- **Majority Vote** — 3 arbitrators are randomly selected. Each votes "Favor Buyer" or "Favor Seller". 2-of-3 majority wins. 48-hour voting window.
+- **Rewards** — Each voting arbitrator earns 20 ARENA immediately on vote submission.
+- **Reputation Slash** — Losing party of a dispute has their on-chain reputation slashed by 30 points.
+- **Outcome Display** — After resolution, the result shows "Buyer Won (2-1 votes)" or "Seller Won".
+
+### Platform Treasury
+- **Fee Collection** — All 2.5% marketplace fees are automatically routed to the Treasury contract's `receive()` function.
+- **On-Chain History** — Every allocation is permanently recorded on-chain with recipient, amount, reason, and timestamp.
+- **Admin Allocation** — Only the deployer wallet (Account #0) holds `ADMIN_ROLE` and can call `allocate()`.
+- **Utilization Bar** — Shows what % of all received ETH has been allocated.
 
 ---
 
-### Custom Features
+## Smart Contracts
 
-**2.1 Zombie Avatar**
-Every zombie has a unique visual avatar generated from its 16-digit DNA using the [RoboHash API](https://robohash.org). Since each DNA maps to a deterministic image, two zombies with identical DNA will look exactly identical. The avatar updates live in the UI whenever DNA changes.
+All 10 contracts live in `crypto-arena/contracts/`.
 
-**2.2 Website UI**
-A custom dark-themed UI was built from scratch using CSS. Zombie cards are displayed in a responsive grid. Each card shows the zombie's avatar, name, DNA, level, win/loss stats, and battle readiness. Modals handle all user interactions (create, fuse, gift, sell) to keep the main view clean. Action buttons on each card adapt dynamically based on the zombie's current state (e.g., listed, on cooldown, level-locked).
-
-**2.3 Zombie Battle Arena**
-A zombie can enter battle against a randomly generated wild zombie. The wild zombie's level is a random number from 1 to `(your zombie's level + 2)`, generated on-chain using `keccak256` hashing. If the wild zombie's level is greater than or equal to your zombie's level, it's a defeat — no level change. If your zombie's level is strictly greater, it wins — the zombie's level increases by 1 at no cost, and its win count increments. All outcomes are broadcast via the `BattleOutcome` event.
-
-**2.4 Cooldown Timer**
-After every battle, a 1-minute cooldown is written to the zombie's `readyTime` field on-chain. The `isReady` modifier enforces this at the contract level — attempting to battle before the timer expires will revert the transaction. On the frontend, each zombie card shows either "Ready to battle!" or a live countdown (minutes and seconds) that ticks in real time. The battle button is disabled during the cooldown period.
-
-**2.5 DNA Mutation**
-A paid feature (cost: 0.01 ETH) unlocked at Level 5+. The player types a new 16-digit DNA string into an inline panel on the zombie card. As each digit is entered, the zombie's avatar updates in real time to preview what the new DNA will look like — digit by digit. Submitting confirms the mutation on-chain and permanently changes the zombie's DNA and appearance. Since the avatar is fully deterministic from the DNA, two zombies with the same DNA will render as identical twins.
-
-**2.6 Zombie Fusion**
-Allows a player to select any two of their own zombies and fuse them into a brand new zombie. The new zombie's DNA is the average of both parents' DNA values (rounded to the nearest 100 to strip the last two digits). Its level is a random number between `min(level1, level2)` and `min(level1, level2) + max(level1, level2)`, computed on-chain using `keccak256`. For example, fusing a Level 25 and a Level 50 zombie produces a new zombie anywhere between Level 25 and Level 75. The fusion is a paid function: cost = `(level1 + level2) × 0.001 ETH`. Upon fusion, both parent zombies are made permanently unreachable — their ownership is set to the zero address (`address(0)`) and their count is decremented from the owner's balance — effectively burning them. The fused zombie is then minted as a new entry and assigned to the caller's wallet.
-
-**2.7 Gift Zombie**
-Transfers full ERC-721 ownership of a zombie to any other wallet address. Implemented using the standard `transferFrom` function from the ERC-721 contract. Once transferred, the zombie is removed from the sender's army and appears in the recipient's army. To prevent accidental transfers, a two-step confirmation modal is used: the user enters the recipient address once, then must re-type it exactly to confirm — any mismatch blocks the transfer. The gift is irreversible once confirmed on-chain.
-
-**2.8 NFT Marketplace**
-
-**2.8.1 Sell Zombie**
-Any zombie can be listed for sale on the shared marketplace. The owner sets a price in ETH. Once listed, the zombie is locked — level up, battle, mutate, and gift are all blocked for that zombie, and only an "Unlist" button is shown on the card. The owner can delist the zombie at any time if it hasn't been sold yet, which restores all action buttons.
-
-**2.8.2 Buy Zombie / Marketplace Section**
-All wallets on the network share access to the same marketplace, which lists every zombie currently for sale. When a buyer clicks "Buy", a single on-chain transaction handles everything atomically: the contract first transfers ownership of the zombie to the buyer (state change before any ETH moves, preventing re-entrancy), then sends the exact listed price to the seller's wallet using `seller.transfer(price)`. Any ETH sent above the listed price is automatically refunded to the buyer. After the transaction confirms, the zombie appears in the buyer's army and disappears from the marketplace.
-
-**2.8.3 Buyer-Seller Conflict Prevention**
-All wallets see the same marketplace listings. However, a seller's own listed zombies are hidden from their marketplace view so they cannot attempt to buy their own zombie. This is enforced at both the frontend (filter by `owner !== userAccount`) and the smart contract level (`require(seller != msg.sender)`), providing double protection.
-
----
-
-## Tech Stack
-
-| Layer            | Technology                       |
-| ---------------- | -------------------------------- |
-| Smart Contracts  | Solidity 0.4.25, Truffle         |
-| Local Blockchain | Ganache (port 7545)              |
-| Frontend         | HTML, CSS, jQuery, Web3.js 1.2.7 |
-| Wallet           | MetaMask                         |
+| Contract                | Purpose                                                                                                                                                   |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ArenaToken.sol`        | ERC-20 token (ARENA). Minted by game contracts as rewards. `grantMinterRole` controls who can mint.                                                       |
+| `CreatureNFT.sol`       | ERC-721 + ERC-2981 NFT. Stores all creature stats (atk, def, spd, hp, element, rarity, xp, level). `grantGameRole` lets game contracts modify stats.      |
+| `BattleEngine.sol`      | 1v1 battles and challenge system. Uses `block.prevrandao` for ±15% variance. Awards ARENA + reputation on win.                                            |
+| `Marketplace.sol`       | Fixed-price and auction listings. 2.5% fee to Treasury. Royalty support via ERC-2981. `batchListFixed` and `batchBuy` for gas-efficient multi-ops.        |
+| `TournamentManager.sol` | Round-by-round bracket tournaments. `startTournament()` runs Round 1; `advanceRound()` runs subsequent rounds (60s delay). Emits `MatchPlayed` per fight. |
+| `ReputationSystem.sol`  | On-chain reputation scores per wallet. Callable only by whitelisted game contracts via `REP_CALLER_ROLE`.                                                 |
+| `GameItems.sol`         | ERC-1155 consumable items (XP Potion, Breed Boost, Battle Boost). Purchased with ARENA. Items apply stat changes to creatures.                            |
+| `Escrow.sol`            | Peer-to-peer ETH ↔ NFT trade escrow with confirmation window, auto-release, and dispute hook.                                                             |
+| `DisputeResolution.sol` | Stake-to-arbitrate system. Excludes buyer/seller from selection pool. 3-arbitrator majority vote. ARENA rewards on vote.                                  |
+| `Treasury.sol`          | Receives marketplace fees via `receive()`. `allocate()` sends ETH to any address with on-chain audit trail. AccessControl admin-only.                     |
 
 ---
 
 ## Contract Architecture
 
 ```
-ZombieFactory
-    └── ZombieFeeding
-            └── ZombieHelper      ← all custom features live here
-                    └── ZombieAttack
-                            └── ZombieOwnership (ERC-721)
+ArenaToken (ERC-20)
+    ├── MINTER_ROLE → BattleEngine, TournamentManager, DisputeResolution
+    └── balanceOf / mint / approve / transferFrom
+
+CreatureNFT (ERC-721 + ERC-2981)
+    ├── GAME_ROLE  → BattleEngine, TournamentManager, GameItems
+    └── addXP / levelUp / recordWin / setStats / royaltyInfo
+
+ReputationSystem
+    └── REP_CALLER_ROLE → BattleEngine, Marketplace, TournamentManager,
+                          Escrow, DisputeResolution
+
+BattleEngine ──────────────────── reads: CreatureNFT
+    └── challenge / acceptChallenge / battle  writes: ReputationSystem, ArenaToken
+
+Marketplace ───────────────────── reads: CreatureNFT
+    └── listFixed / listAuction / buy / bid   writes: ReputationSystem
+    └── 2.5% fee ──────────────────────────→ Treasury.receive()
+
+TournamentManager ─────────────── reads: CreatureNFT
+    └── create / join / startTournament       writes: ArenaToken, ReputationSystem
+    └── advanceRound (60s delay)
+
+GameItems (ERC-1155)
+    └── buy / useXPPotion / useBreedBoost / useBattleBoost  writes: CreatureNFT
+
+Escrow ─────────────────────────── holds: CreatureNFT (NFT lock)
+    └── create / accept / confirmDelivery / raiseDispute → DisputeResolution
+    └── writes: ReputationSystem
+
+DisputeResolution
+    ├── stakeToArbitrate / unstake
+    ├── createDispute (excludes buyer+seller from pool)
+    ├── vote (3 arbitrators, 48hr window) → writes: ArenaToken (rewards)
+    └── _finalize → Escrow.resolveDispute → writes: ReputationSystem
+
+Treasury
+    └── receive() ← Marketplace fees
+    └── allocate() ← ADMIN_ROLE only
 ```
 
 ---
 
-## Prerequisites
+## Tech Stack
 
-- [Node.js](https://nodejs.org/) v14+
-- [Truffle](https://trufflesuite.com/) — `npm install -g truffle`
-- [Ganache](https://trufflesuite.com/ganache/) — desktop app or CLI
+| Layer            | Technology                                    |
+| ---------------- | --------------------------------------------- |
+| Smart Contracts  | Solidity ^0.8.24, Hardhat 2.x, OpenZeppelin 5 |
+| Local Blockchain | Hardhat Network (chainId 31337, port 8545)    |
+| Frontend         | React 18, Vite, Tailwind CSS, ethers.js v6    |
+| Wallet           | MetaMask                                      |
+| Notifications    | react-hot-toast                               |
+| Avatars          | RoboHash API (deterministic from DNA)         |
+| Deployment       | Vercel (frontend) + Alchemy RPC (Sepolia)     |
+
+---
+
+## Local Setup & Run Instructions
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) v18+
 - [MetaMask](https://metamask.io/) browser extension
 
----
+### Step 1 — Install dependencies
 
-## Local Setup & Deployment
-
-**1. Install dependencies**
 ```bash
+cd crypto-arena
 npm install
+cd frontend
+npm install
+cd ..
 ```
 
-**2. Start Ganache**
-Open the Ganache desktop app and start a workspace on port `7545`, or run:
+### Step 2 — Compile contracts
+
 ```bash
-npx ganache-cli -p 7545
+npx hardhat compile
 ```
 
-**3. Compile contracts**
+### Step 3 — Start the local Hardhat node
+
+Open a **dedicated terminal** and keep it running:
+
 ```bash
-truffle compile
+npx hardhat node
 ```
 
-**4. Deploy contracts to Ganache**
+This starts a local blockchain at `http://127.0.0.1:8545` with 20 pre-funded accounts (10,000 ETH each). The terminal will print all 20 account addresses and private keys — copy at least 5 of them for testing.
+
+### Step 4 — Deploy contracts
+
+Open a **second terminal** (keep the node running in the first):
+
 ```bash
-truffle migrate --reset --network development
-```
-Copy the deployed `ZombieOwnership` contract address from the migration output.
-
-**5. Update the contract address**
-Open `index.html` and update the address in `startApp()`:
-```javascript
-var cryptoZombiesAddress = "0xYourDeployedContractAddress";
+npx hardhat run scripts/deploy.js --network localhost
 ```
 
-**6. Connect MetaMask**
-- Network: `Localhost 7545` (`HTTP://127.0.0.1:7545`)
-- Chain ID: `1337`
-- Import Ganache accounts using their private keys.
+This will:
+- Deploy all 10 contracts in dependency order
+- Wire all cross-contract roles automatically
+- Distribute 10,000 ARENA tokens to accounts 0–9
+- Mint test GameItems (XP Potions, Breed Boosts, Battle Boosts) to accounts 0–4
+- Write `frontend/src/config.js` with all contract addresses
+- Copy compiled ABIs to `frontend/src/abi/`
 
-**7. Open the app**
-Open `index.html` directly in your browser — no server required.
+**Important:** You must re-run this step every time you restart the Hardhat node, because the node resets all state on restart.
+
+### Step 5 — Start the frontend
+
+Open a **third terminal**:
+
+```bash
+cd frontend
+npm run dev
+```
+
+The app will be available at `http://localhost:5173`.
+
+### Step 6 — Configure MetaMask
+
+See the [MetaMask Configuration](#metamask-configuration) section below.
+
+### Daily workflow summary
+
+```bash
+# Terminal 1 (keep open)
+cd crypto-arena && npx hardhat node
+
+# Terminal 2 (run once per node restart)
+cd crypto-arena && npx hardhat run scripts/deploy.js --network localhost
+
+# Terminal 3 (keep open)
+cd crypto-arena/frontend && npm run dev
+```
 
 ---
 
-## Run Tests
+## Deploying to Vercel + Sepolia
+
+This section is optional. For the final demo, we used the local Hardhat network. Vercel requires contracts to be deployed on a public testnet such as Sepolia, which needs testnet ETH and extra setup.
+
+### Prerequisites
+
+- [Alchemy account](https://www.alchemy.com/) (free tier is fine)
+- [Vercel account](https://vercel.com/) (free tier is fine)
+- [Vercel CLI](https://vercel.com/docs/cli): `npm install -g vercel`
+- Sepolia ETH for the deployer — get from [https://sepoliafaucet.com](https://sepoliafaucet.com) or [https://faucet.quicknode.com/ethereum/sepolia](https://faucet.quicknode.com/ethereum/sepolia)
+
+### Step 1 — Get an Alchemy RPC URL
+
+1. Log in to [https://www.alchemy.com/](https://www.alchemy.com/)
+2. Create a new app → select **Ethereum** → select **Sepolia**
+3. Copy the **HTTPS** URL (looks like `https://eth-sepolia.g.alchemy.com/v2/YOUR_API_KEY`)
+
+### Step 2 — Add Sepolia network to hardhat.config.js
+
+Open `crypto-arena/hardhat.config.js` and add:
+
+```js
+require("@nomicfoundation/hardhat-toolbox");
+
+module.exports = {
+  solidity: "0.8.20",
+  networks: {
+    localhost: {
+      url: "http://127.0.0.1:8545",
+      chainId: 31337,
+    },
+    sepolia: {
+      url: "https://eth-sepolia.g.alchemy.com/v2/YOUR_API_KEY",   // ← paste your Alchemy URL
+      accounts: ["0xYOUR_DEPLOYER_PRIVATE_KEY"],                   // ← MetaMask deployer private key
+      chainId: 11155111,
+    },
+  },
+};
+```
+
+**Never commit your private key.** Use a `.env` file instead:
 
 ```bash
-truffle test --network development
+# .env (add to .gitignore!)
+SEPOLIA_RPC=https://eth-sepolia.g.alchemy.com/v2/YOUR_API_KEY
+DEPLOYER_KEY=0xYOUR_PRIVATE_KEY
 ```
+
+```js
+// hardhat.config.js with dotenv
+require("dotenv").config();
+module.exports = {
+  solidity: "0.8.20",
+  networks: {
+    sepolia: {
+      url: process.env.SEPOLIA_RPC,
+      accounts: [process.env.DEPLOYER_KEY],
+      chainId: 11155111,
+    },
+  },
+};
+```
+
+### Step 3 — Deploy contracts to Sepolia
+
+```bash
+cd crypto-arena
+npx hardhat run scripts/deploy.js --network sepolia
+```
+
+The script automatically writes `frontend/src/config.js` with the live Sepolia addresses and sets `rpcUrl` to the Alchemy endpoint. Wait for the script to finish (may take 1–3 minutes on Sepolia).
+
+**Update the RPC URL in config.js:** After deployment, open `frontend/src/config.js` and make sure `rpcUrl` matches your Alchemy endpoint and `chainId` is `11155111`.
+
+```js
+export const CHAIN_CONFIG = {
+  chainId: 11155111,
+  name: "sepolia",
+  rpcUrl: "https://eth-sepolia.g.alchemy.com/v2/YOUR_API_KEY",
+};
+```
+
+### Step 4 — Build the frontend
+
+```bash
+cd crypto-arena/frontend
+npm run build
+```
+
+This creates a `dist/` folder with the production-optimized app.
+
+### Step 5 — Deploy to Vercel
+
+```bash
+cd crypto-arena/frontend
+vercel
+```
+
+Follow the prompts:
+- **Set up and deploy?** → Y
+- **Which scope?** → your personal account
+- **Link to existing project?** → N (first time)
+- **Project name** → `crypto-arena` (or anything)
+- **Directory** → `./` (you're already in the frontend folder)
+- **Override build command?** → N (Vercel auto-detects Vite)
+- **Override output directory?** → N
+
+After deploy completes, Vercel will print a URL like `https://crypto-arena-xyz.vercel.app`. That's your live app.
+
+For future deployments after code changes:
+
+```bash
+cd crypto-arena/frontend
+npm run build
+vercel --prod
+```
+
+### Step 6 — Share with participants
+
+Send all 5 participants:
+1. The Vercel URL
+2. Instructions to add Sepolia to MetaMask (see below)
+3. A small amount of Sepolia ETH (for gas) — send from the deployer wallet
+4. The deployer's wallet already has 10,000 ARENA from deploy script; mint more if needed via `arenaToken.mint(address, amount)`
+
+---
+
+## MetaMask Configuration
+
+### For local Hardhat network
+
+1. Open MetaMask → click the network dropdown → **Add a network manually**
+2. Fill in:
+   - **Network Name:** `Hardhat Local`
+   - **RPC URL:** `http://127.0.0.1:8545`
+   - **Chain ID:** `31337`
+   - **Currency Symbol:** `ETH`
+3. Click Save and switch to **Hardhat Local**
+
+**Import test accounts:**
+When you run `npx hardhat node`, it prints 20 accounts with their private keys. Import the accounts you want to test with:
+- MetaMask → click the account icon → **Import Account** → paste the private key
+
+Account #0 is the deployer and the only Treasury admin.
+
+### For Sepolia testnet
+
+1. MetaMask → **Add a network manually**
+2. Fill in:
+   - **Network Name:** `Sepolia`
+   - **RPC URL:** `https://eth-sepolia.g.alchemy.com/v2/YOUR_API_KEY` (your Alchemy key)
+   - **Chain ID:** `11155111`
+   - **Currency Symbol:** `ETH`
+   - **Block Explorer URL:** `https://sepolia.etherscan.io`
+3. Click Save
+
+**Get Sepolia ETH (testnet only, no real value):**
+- [https://sepoliafaucet.com](https://sepoliafaucet.com)
+- [https://faucet.quicknode.com/ethereum/sepolia](https://faucet.quicknode.com/ethereum/sepolia)
+
+---
+
+## Notes for Graders / Participants
+
+- **Treasury Admin** — Only Account #0 (the deployer) can call `allocate()`. Switching to any other account will show "Switch to the deployer wallet (Account #0) to allocate."
+- **Arbitrator Pool** — At least 3 *different* wallets must call `stakeToArbitrate()` before any dispute can be raised. The buyer and seller are automatically excluded from their own dispute's arbitrators.
+- **Auction Timing** — The 1-minute auction option is available for quick demos. On Hardhat, block timestamps can be advanced with `npx hardhat node --mining-interval 0` or `evm_increaseTime` if needed.
+- **Tournament Rounds** — After `startTournament()`, each subsequent round requires clicking "Next Round" once 60 seconds have passed. The button appears automatically with a countdown.
+- **Re-deploying** — Every time you restart `npx hardhat node`, you must re-run `deploy.js` to get fresh addresses. The frontend config is overwritten automatically.

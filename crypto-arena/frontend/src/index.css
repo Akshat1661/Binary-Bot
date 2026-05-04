@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-arena-bg text-white font-mono antialiased;
+    background-image:
+      radial-gradient(ellipse at 20% 10%, rgba(124, 58, 237, 0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 80%, rgba(219, 39, 119, 0.06) 0%, transparent 60%);
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-arena-purple hover:bg-arena-violet text-white font-semibold px-4 py-2 rounded-lg
+           transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed
+           active:scale-95 shadow-lg shadow-purple-900/30;
+  }
+  .btn-secondary {
+    @apply border border-arena-border hover:border-arena-purple text-gray-300 hover:text-white
+           font-semibold px-4 py-2 rounded-lg transition-all duration-200
+           disabled:opacity-40 disabled:cursor-not-allowed active:scale-95;
+  }
+  .btn-danger {
+    @apply bg-arena-red/20 hover:bg-arena-red/40 border border-arena-red/40 text-red-400
+           font-semibold px-4 py-2 rounded-lg transition-all duration-200 active:scale-95;
+  }
+  .card {
+    @apply bg-arena-card border border-arena-border rounded-xl p-4;
+  }
+  .input {
+    @apply bg-arena-bg border border-arena-border rounded-lg px-3 py-2 text-white
+           placeholder-gray-600 focus:outline-none focus:border-arena-purple
+           transition-colors w-full;
+  }
+  .badge {
+    @apply inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full;
+  }
+  .stat-bar-track {
+    @apply h-1.5 bg-arena-border rounded-full overflow-hidden;
+  }
+  .stat-bar-fill {
+    @apply h-full rounded-full transition-all duration-700;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #0a0a1a; }
+::-webkit-scrollbar-thumb { background: #1e1e3f; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #7c3aed; }
+
+/* Creature card glow on hover */
+.creature-card:hover { box-shadow: 0 0 20px rgba(124, 58, 237, 0.25); }
+
+/* Element colours */
+.el-fire  { color: #f97316; }
+.el-water { color: #38bdf8; }
+.el-earth { color: #84cc16; }
+.el-air   { color: #e2e8f0; }
+.el-light { color: #fde68a; }
+.el-dark  { color: #a78bfa; }

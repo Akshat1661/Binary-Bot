@@ -1,0 +1,11 @@
+node_modules/
+.env
+artifacts/
+cache/
+frontend/node_modules/
+frontend/dist/
+crypto-arena/node_modules/
+crypto-arena/frontend/node_modules/
+crypto-arena/artifacts/
+crypto-arena/cache/
+crypto-arena/frontend/dist/
