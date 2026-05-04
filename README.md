@@ -1,10 +1,10 @@
-# CryptoArena — CPSC 559 Final Project
+# CryptoArena - CPSC 559 Final Project
 
 ## Binary Bots
 ### Akshat Sureshbhai Desai (820501773)
 ### Jiya Prashant Desai (817816879)
 
-A full-stack Web3 decentralized application built from scratch with 10 original Solidity smart contracts, a React + Vite frontend, and MetaMask wallet integration. CryptoArena is a creature-battling NFT game where players mint, train, battle, trade, and compete with on-chain creatures — all governed by smart contracts on a local Hardhat blockchain (or Sepolia testnet for live demo).
+A full-stack Web3 decentralized application built from scratch with 10 original Solidity smart contracts, a React + Vite frontend, and MetaMask wallet integration. CryptoArena is a creature-battling NFT game where players mint, train, battle, trade, and compete with on-chain creatures - all governed by smart contracts on a local Hardhat blockchain (or Sepolia testnet for live demo).
 
 **Midterm Repo:** [https://github.com/Akshat1661/Binary-Bot](https://github.com/Akshat1661/Binary-Bot)
 
@@ -22,59 +22,59 @@ A full-stack Web3 decentralized application built from scratch with 10 original 
 
 ## Features
 
-### Dashboard — My Army
-- **Mint a Creature** — Pay 10 ARENA tokens to mint a new creature NFT. DNA, element (Fire/Water/Earth/Air/Light/Dark), rarity (Common/Uncommon/Rare/Legendary), and stats (ATK/DEF/SPD/HP) are generated pseudo-randomly on-chain.
-- **Level Up** — Spend ARENA tokens to increase a creature's level (10 ARENA × current level). Higher levels improve stats.
-- **Breed Creatures** — Combine two creatures to produce an offspring that inherits averaged stats from both parents. Costs 20 ARENA per breed.
-- **Live Avatars** — Each creature renders a unique avatar via RoboHash, deterministically derived from its on-chain DNA. Rarity shown with color-coded borders.
+### Dashboard - My Army
+- **Mint a Creature** - Pay 10 ARENA tokens to mint a new creature NFT. DNA, element (Fire/Water/Earth/Air/Light/Dark), rarity (Common/Uncommon/Rare/Legendary), and stats (ATK/DEF/SPD/HP) are generated pseudo-randomly on-chain.
+- **Level Up** - Spend ARENA tokens to increase a creature's level (10 ARENA × current level). Higher levels improve stats.
+- **Breed Creatures** - Combine two creatures to produce an offspring that inherits averaged stats from both parents. Costs 20 ARENA per breed.
+- **Live Avatars** - Each creature renders a unique avatar via RoboHash, deterministically derived from its on-chain DNA. Rarity shown with color-coded borders.
 
 ### Battle Arena
-- **1v1 Battles** — Challenge any creature from any wallet. Winner is decided by a stat comparison with ±15% random variance using `block.prevrandao`.
-- **Challenge System** — Send, accept, decline, or cancel challenges. Challenged player sees incoming challenge requests in real time.
-- **Cooldown Timer** — After a battle, a 1-minute cooldown is enforced on-chain. Frontend shows a live countdown per creature.
-- **Reputation** — Winners earn +15 on-chain reputation points; losers earn +5 participation reputation. Reputation is stored in `ReputationSystem.sol`.
-- **ARENA Rewards** — Winners earn 10 ARENA tokens per battle win.
+- **1v1 Battles** - Challenge any creature from any wallet. Winner is decided by a stat comparison with ±15% random variance using `block.prevrandao`.
+- **Challenge System** - Send, accept, decline, or cancel challenges. Challenged player sees incoming challenge requests in real time.
+- **Cooldown Timer** - After a battle, a 1-minute cooldown is enforced on-chain. Frontend shows a live countdown per creature.
+- **Reputation** - Winners earn +15 on-chain reputation points; losers earn +5 participation reputation. Reputation is stored in `ReputationSystem.sol`.
+- **ARENA Rewards** - Winners earn 10 ARENA tokens per battle win.
 
 ### NFT Marketplace
-- **Fixed-Price Listings** — List any creature at a set ETH price. A 2.5% platform fee is deducted on every sale, routed to the Treasury.
-- **Auctions** — List a creature with a reserve price and duration (1 minute / 1 hour / 24 hours). Anyone can place bids. Winner takes the creature; reserve-unmet auctions refund the bidder.
-- **Batch Operations** — List multiple creatures at once (`batchListFixed`) or buy multiple fixed-price listings in one transaction (`batchBuy`).
-- **Royalties** — Creators earn 5% royalty on every secondary sale (ERC-2981).
-- **My Listings vs Others** — Tab view separates your active listings from the broader marketplace.
+- **Fixed-Price Listings** - List any creature at a set ETH price. A 2.5% platform fee is deducted on every sale, routed to the Treasury.
+- **Auctions** - List a creature with a reserve price and duration (1 minute / 1 hour / 24 hours). Anyone can place bids. Winner takes the creature; reserve-unmet auctions refund the bidder.
+- **Batch Operations** - List multiple creatures at once (`batchListFixed`) or buy multiple fixed-price listings in one transaction (`batchBuy`).
+- **Royalties** - Creators earn 5% royalty on every secondary sale (ERC-2981).
+- **My Listings vs Others** - Tab view separates your active listings from the broader marketplace.
 
 ### Tournaments
-- **Create a Tournament** — Set ETH entry fee, max participants, and registration window.
-- **Join with a Creature** — Pay the ETH entry fee to register a creature in the tournament bracket.
-- **Round-by-Round Results** — Each round is advanced manually after a 60-second delay. Every match shows "Creature A vs Creature B → Creature A won" with the loser struck through.
-- **Prizes** — Winner earns 100% of the ETH prize pool plus 500 ARENA.
-- **Reputation & XP** — Tournament winner gains +20 reputation and 200 XP on-chain.
+- **Create a Tournament** - Set ETH entry fee, max participants, and registration window.
+- **Join with a Creature** - Pay the ETH entry fee to register a creature in the tournament bracket.
+- **Round-by-Round Results** - Each round is advanced manually after a 60-second delay. Every match shows "Creature A vs Creature B → Creature A won" with the loser struck through.
+- **Prizes** - Winner earns 100% of the ETH prize pool plus 500 ARENA.
+- **Reputation & XP** - Tournament winner gains +20 reputation and 200 XP on-chain.
 
 ### Game Items Shop
-- **XP Potion** — Instantly grants 100 XP to any of your creatures (cost: 10 ARENA).
-- **Breed Boost** — Grants 200 XP simulating an offspring bonus (cost: 25 ARENA).
-- **Battle Boost** — Grants 50 XP and records an extra win (cost: 15 ARENA).
+- **XP Potion** - Instantly grants 100 XP to any of your creatures (cost: 10 ARENA).
+- **Breed Boost** - Grants 200 XP simulating an offspring bonus (cost: 25 ARENA).
+- **Battle Boost** - Grants 50 XP and records an extra win (cost: 15 ARENA).
 - Items are ERC-1155 tokens. Admins can mint items via `adminMint`.
 
 ### Escrow Trades
-- **Peer-to-Peer Escrow** — Seller locks a creature NFT in escrow; buyer deposits ETH. Neither party can back out mid-trade.
-- **Confirm Delivery** — Buyer confirms they received the creature, releasing ETH to the seller.
-- **Auto-Release** — If buyer doesn't act within 48 hours, ETH auto-releases to seller.
-- **Dispute** — Buyer can raise a dispute before the deadline, triggering arbitration.
-- **Cancel** — The seller can cancel before the escrow is accepted.
+- **Peer-to-Peer Escrow** - Seller locks a creature NFT in escrow; buyer deposits ETH. Neither party can back out mid-trade.
+- **Confirm Delivery** - Buyer confirms they received the creature, releasing ETH to the seller.
+- **Auto-Release** - If buyer doesn't act within 48 hours, ETH auto-releases to seller.
+- **Dispute** - Buyer can raise a dispute before the deadline, triggering arbitration.
+- **Cancel** - The seller can cancel before the escrow is accepted.
 
 ### Dispute Resolution
-- **Staked Arbitrators** — Any user can stake 100 ARENA to join the arbitrator pool. Minimum 3 needed for any dispute.
-- **Exclusion** — Buyer and seller are automatically excluded from their own dispute's arbitrator selection.
-- **Majority Vote** — 3 arbitrators are randomly selected. Each votes "Favor Buyer" or "Favor Seller". 2-of-3 majority wins. 48-hour voting window.
-- **Rewards** — Each voting arbitrator earns 20 ARENA immediately on vote submission.
-- **Reputation Slash** — Losing party of a dispute has their on-chain reputation slashed by 30 points.
-- **Outcome Display** — After resolution, the result shows "Buyer Won (2-1 votes)" or "Seller Won".
+- **Staked Arbitrators** - Any user can stake 100 ARENA to join the arbitrator pool. Minimum 3 needed for any dispute.
+- **Exclusion** - Buyer and seller are automatically excluded from their own dispute's arbitrator selection.
+- **Majority Vote** - 3 arbitrators are randomly selected. Each votes "Favor Buyer" or "Favor Seller". 2-of-3 majority wins. 48-hour voting window.
+- **Rewards** - Each voting arbitrator earns 20 ARENA immediately on vote submission.
+- **Reputation Slash** - Losing party of a dispute has their on-chain reputation slashed by 30 points.
+- **Outcome Display** - After resolution, the result shows "Buyer Won (2-1 votes)" or "Seller Won".
 
 ### Platform Treasury
-- **Fee Collection** — All 2.5% marketplace fees are automatically routed to the Treasury contract's `receive()` function.
-- **On-Chain History** — Every allocation is permanently recorded on-chain with recipient, amount, reason, and timestamp.
-- **Admin Allocation** — Only the deployer wallet (Account #0) holds `ADMIN_ROLE` and can call `allocate()`.
-- **Utilization Bar** — Shows what % of all received ETH has been allocated.
+- **Fee Collection** - All 2.5% marketplace fees are automatically routed to the Treasury contract's `receive()` function.
+- **On-Chain History** - Every allocation is permanently recorded on-chain with recipient, amount, reason, and timestamp.
+- **Admin Allocation** - Only the deployer wallet (Account #0) holds `ADMIN_ROLE` and can call `allocate()`.
+- **Utilization Bar** - Shows what % of all received ETH has been allocated.
 
 ---
 
@@ -164,7 +164,7 @@ Treasury
 - [Node.js](https://nodejs.org/) v18+
 - [MetaMask](https://metamask.io/) browser extension
 
-### Step 1 — Install dependencies
+### Step 1 - Install dependencies
 
 ```bash
 cd crypto-arena
@@ -174,13 +174,13 @@ npm install
 cd ..
 ```
 
-### Step 2 — Compile contracts
+### Step 2 - Compile contracts
 
 ```bash
 npx hardhat compile
 ```
 
-### Step 3 — Start the local Hardhat node
+### Step 3 - Start the local Hardhat node
 
 Open a **dedicated terminal** and keep it running:
 
@@ -188,9 +188,9 @@ Open a **dedicated terminal** and keep it running:
 npx hardhat node
 ```
 
-This starts a local blockchain at `http://127.0.0.1:8545` with 20 pre-funded accounts (10,000 ETH each). The terminal will print all 20 account addresses and private keys — copy at least 5 of them for testing.
+This starts a local blockchain at `http://127.0.0.1:8545` with 20 pre-funded accounts (10,000 ETH each). The terminal will print all 20 account addresses and private keys - copy at least 5 of them for testing.
 
-### Step 4 — Deploy contracts
+### Step 4 - Deploy contracts
 
 Open a **second terminal** (keep the node running in the first):
 
@@ -208,7 +208,7 @@ This will:
 
 **Important:** You must re-run this step every time you restart the Hardhat node, because the node resets all state on restart.
 
-### Step 5 — Start the frontend
+### Step 5 - Start the frontend
 
 Open a **third terminal**:
 
@@ -219,7 +219,7 @@ npm run dev
 
 The app will be available at `http://localhost:5173`.
 
-### Step 6 — Configure MetaMask
+### Step 6 - Configure MetaMask
 
 See the [MetaMask Configuration](#metamask-configuration) section below.
 
@@ -247,15 +247,15 @@ This section is optional. For the final demo, we used the local Hardhat network.
 - [Alchemy account](https://www.alchemy.com/) (free tier is fine)
 - [Vercel account](https://vercel.com/) (free tier is fine)
 - [Vercel CLI](https://vercel.com/docs/cli): `npm install -g vercel`
-- Sepolia ETH for the deployer — get from [https://sepoliafaucet.com](https://sepoliafaucet.com) or [https://faucet.quicknode.com/ethereum/sepolia](https://faucet.quicknode.com/ethereum/sepolia)
+- Sepolia ETH for the deployer - get from [https://sepoliafaucet.com](https://sepoliafaucet.com) or [https://faucet.quicknode.com/ethereum/sepolia](https://faucet.quicknode.com/ethereum/sepolia)
 
-### Step 1 — Get an Alchemy RPC URL
+### Step 1 - Get an Alchemy RPC URL
 
 1. Log in to [https://www.alchemy.com/](https://www.alchemy.com/)
 2. Create a new app → select **Ethereum** → select **Sepolia**
 3. Copy the **HTTPS** URL (looks like `https://eth-sepolia.g.alchemy.com/v2/YOUR_API_KEY`)
 
-### Step 2 — Add Sepolia network to hardhat.config.js
+### Step 2 - Add Sepolia network to hardhat.config.js
 
 Open `crypto-arena/hardhat.config.js` and add:
 
@@ -301,7 +301,7 @@ module.exports = {
 };
 ```
 
-### Step 3 — Deploy contracts to Sepolia
+### Step 3 - Deploy contracts to Sepolia
 
 ```bash
 cd crypto-arena
@@ -320,7 +320,7 @@ export const CHAIN_CONFIG = {
 };
 ```
 
-### Step 4 — Build the frontend
+### Step 4 - Build the frontend
 
 ```bash
 cd crypto-arena/frontend
@@ -329,7 +329,7 @@ npm run build
 
 This creates a `dist/` folder with the production-optimized app.
 
-### Step 5 — Deploy to Vercel
+### Step 5 - Deploy to Vercel
 
 ```bash
 cd crypto-arena/frontend
@@ -355,12 +355,12 @@ npm run build
 vercel --prod
 ```
 
-### Step 6 — Share with participants
+### Step 6 - Share with participants
 
 Send all 5 participants:
 1. The Vercel URL
 2. Instructions to add Sepolia to MetaMask (see below)
-3. A small amount of Sepolia ETH (for gas) — send from the deployer wallet
+3. A small amount of Sepolia ETH (for gas) - send from the deployer wallet
 4. The deployer's wallet already has 10,000 ARENA from deploy script; mint more if needed via `arenaToken.mint(address, amount)`
 
 ---
@@ -402,8 +402,8 @@ Account #0 is the deployer and the only Treasury admin.
 
 ## Notes for Graders / Participants
 
-- **Treasury Admin** — Only Account #0 (the deployer) can call `allocate()`. Switching to any other account will show "Switch to the deployer wallet (Account #0) to allocate."
-- **Arbitrator Pool** — At least 3 *different* wallets must call `stakeToArbitrate()` before any dispute can be raised. The buyer and seller are automatically excluded from their own dispute's arbitrators.
-- **Auction Timing** — The 1-minute auction option is available for quick demos. On Hardhat, block timestamps can be advanced with `npx hardhat node --mining-interval 0` or `evm_increaseTime` if needed.
-- **Tournament Rounds** — After `startTournament()`, each subsequent round requires clicking "Next Round" once 60 seconds have passed. The button appears automatically with a countdown.
-- **Re-deploying** — Every time you restart `npx hardhat node`, you must re-run `deploy.js` to get fresh addresses. The frontend config is overwritten automatically.
+- **Treasury Admin** - Only Account #0 (the deployer) can call `allocate()`. Switching to any other account will show "Switch to the deployer wallet (Account #0) to allocate."
+- **Arbitrator Pool** - At least 3 *different* wallets must call `stakeToArbitrate()` before any dispute can be raised. The buyer and seller are automatically excluded from their own dispute's arbitrators.
+- **Auction Timing** - The 1-minute auction option is available for quick demos. On Hardhat, block timestamps can be advanced with `npx hardhat node --mining-interval 0` or `evm_increaseTime` if needed.
+- **Tournament Rounds** - After `startTournament()`, each subsequent round requires clicking "Next Round" once 60 seconds have passed. The button appears automatically with a countdown.
+- **Re-deploying** - Every time you restart `npx hardhat node`, you must re-run `deploy.js` to get fresh addresses. The frontend config is overwritten automatically.
