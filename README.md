@@ -20,6 +20,13 @@ A full-stack Web3 decentralized application built from scratch with 10 original 
 6. [Deploying to Vercel + Sepolia](#deploying-to-vercel--sepolia)
 7. [MetaMask Configuration](#metamask-configuration)
 
+<<<<<<< HEAD
+=======
+## Github Link
+
+[Binary Bots Repo Link](https://github.com/Akshat1661/Binary-Bot)
+
+>>>>>>> 035b57636aecd3078753fad0b34b9d9634514008
 ---
 
 ## Features
