@@ -1,8 +1,8 @@
 # CryptoArena - CPSC 559 Final Project
 
 ## Binary Bots
-### Akshat Sureshbhai Desai (820501773)
-### Jiya Prashant Desai (817816879)
+### Akshat Sureshbhai Desai (820501773) - [akshatdesai@csu.fullertone.edu]
+### Jiya Prashant Desai (817816879) - [jiyadesai@csu.fullerton.edu]
 
 A full-stack Web3 decentralized application built from scratch with 10 original Solidity smart contracts, a React + Vite frontend, and MetaMask wallet integration. CryptoArena is a creature-battling NFT game where players mint, train, battle, trade, and compete with on-chain creatures - all governed by smart contracts on a local Hardhat blockchain (or Sepolia testnet for live demo).
 
@@ -20,7 +20,7 @@ A full-stack Web3 decentralized application built from scratch with 10 original 
 6. [Deploying to Vercel + Sepolia](#deploying-to-vercel--sepolia)
 7. [MetaMask Configuration](#metamask-configuration)
 
-## Features
+## Improved Features
 
 ### Dashboard - My Army
 - **Mint a Creature** - Pay 10 ARENA tokens to mint a new creature NFT. DNA, element (Fire/Water/Earth/Air/Light/Dark), rarity (Common/Uncommon/Rare/Legendary), and stats (ATK/DEF/SPD/HP) are generated pseudo-randomly on-chain.
